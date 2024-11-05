@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Gambling Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background"></div>
+    <div class="container">
+        <div class="icon-bar">
+            <img src="https://images.takeshape.io/5da2b4d5-59f6-412a-82c3-f6a272b532be/dev/b0560db5-06a6-4c14-8ee4-82564034e815/Animated%20Betpool%20Icon.svg?auto=format%2Ccompress" alt="Dice" class="icon">
+            <span class="icon">Betpool</span>
+        </div>
+        <div class="table">
+            <div class="row header">
+                <div class="cell">თამაში</div>
+                <div class="cell">ბეთი</div>
+                <div class="cell">ნამრავლი</div>
+                <div class="cell">მოგება</div>
+            </div>
+            <div id="rowsContainer"></div>
+            <button id="addRowBtn">დამატება</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
+<style>
+    @font-face {
+    font-family: 'Noto Sans ambassadori';
+    src: url('https://usernamenotavailable12.github.io/Font-Repository/NotoSansAmbassadori-Bold.ttf');
+  }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Noto Sans ambassadori";
+    font-weight: bold;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    color: white;
+    background: linear-gradient(135deg, #61002d, #000280);
+    position: relative;
+}
+
+.background {
+    background: url("https://images.takeshape.io/5da2b4d5-59f6-412a-82c3-f6a272b532be/dev/1f7b202a-5fcb-4af3-a6ff-54093bacb99e/BG%20playing.webp") no-repeat center center fixed;
+    background-size: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.3;
+    z-index: -1;
+    filter: blur(10px);
+}
+
+.container {
+    text-align: center;
+    backdrop-filter: blur(6px);
+    
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: #ff00aa;
+    text-shadow: 0px 0px 10px #ff0080;
+}
+
+.icon-bar {
+    margin: 15px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.icon {
+    width: 70px;
+    height: 70px;
+    font-size: 25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.3s ease;
+}
+
+.icon:hover {
+    transform: scale(1.1);
+}
+
+.table {
+    display: inline-block;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    animation: fadeIn 0.3s ease-in;
+    gap: 30px;
+}
+
+.header {
+    font-weight: bold;
+    border-bottom: 2px solid #555;
+}
+
+.cell {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+}
+
+input {
+    width: 90%;
+    padding: 5px;
+    font-size: 1rem;
+    text-align: center;
+    border: 1px solid #444;
+    border-radius: 5px;
+    background-color: #2a2d31;
+    color: #fff;
+    box-shadow: inset 0 0 5px #000000;
+}
+
+button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    color: #fff;
+    background-color: #ff227e;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+    background-color: #ff438b;
+    transform: translateY(-2px);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+</style>
+<script>
+// Function to create a new row
+function createRow(data = {}) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    
+    // Field identifiers for storage and retrieval
+    const fields = [
+        { id: 'gameName', placeholder: 'თამაშის სახელი' },
+        { id: 'betAmount', placeholder: 'ფსონის ოდენობა', type: 'number' },
+        { id: 'multiplier', placeholder: 'ნამრავლი', type: 'number' },
+        { id: 'winAmount', placeholder: 'ჯამური მოგება', type: 'number', readonly: true }
+    ];
+
+    const inputs = {}; // To keep track of the inputs for calculation
+    
+    fields.forEach(field => {
+        const input = document.createElement('input');
+        input.value = data[field.id] || '';  // Load saved value if available
+        input.placeholder = `შეიყვანე ${field.placeholder}`;
+        input.type = field.type || 'text';
+        if (field.readonly) input.readOnly = true; // Make winAmount readonly
+        input.onchange = saveData;  // Trigger save on input change
+        
+        // Store inputs for calculation reference
+        inputs[field.id] = input;
+        
+        // Add calculation for winAmount whenever betAmount or multiplier changes
+        if (field.id === 'betAmount' || field.id === 'multiplier') {
+            input.oninput = () => {
+                calculateWinAmount(inputs);
+                saveData(); // Save data after each calculation update
+            };
+        }
+
+        row.appendChild(input);
+    });
+
+    document.getElementById('rowsContainer').appendChild(row);
+}
+
+// Function to calculate win amount
+function calculateWinAmount(inputs) {
+    const betAmount = parseFloat(inputs['betAmount'].value) || 0;
+    const multiplier = parseFloat(inputs['multiplier'].value) || 0;
+    const winAmount = betAmount * multiplier;
+    inputs['winAmount'].value = winAmount.toFixed(2); // Update winAmount in the row
+}
+
+// Function to save data to cookies
+function saveData() {
+    const rowsData = Array.from(document.querySelectorAll('#rowsContainer .row')).map(row => {
+        const inputs = row.querySelectorAll('input');
+        return {
+            gameName: inputs[0].value,
+            betAmount: inputs[1].value,
+            multiplier: inputs[2].value,
+            winAmount: inputs[3].value
+        };
+    });
+    document.cookie = `betData=${encodeURIComponent(JSON.stringify(rowsData))}; path=/; max-age=31536000`;
+}
+
+// Function to load data from cookies
+function loadData() {
+    const cookie = document.cookie.split('; ').find(row => row.startsWith('betData='));
+    if (!cookie) return;
+    const betData = JSON.parse(decodeURIComponent(cookie.split('=')[1]));
+    betData.forEach(data => createRow(data));
+}
+
+// Add initial row and load data from cookies
+document.getElementById('addRowBtn').onclick = () => createRow();
+window.onload = loadData;
+
+</script>
